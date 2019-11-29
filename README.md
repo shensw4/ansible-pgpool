@@ -21,7 +21,7 @@
 # 快速指南
 - **拉取仓库**
 ``` bash
-cd /root && git clone https://github.com/shensw4/ansible-pgpool.git
+git clone https://github.com/shensw4/ansible-pgpool.git /root/ansible && cd /root/ansible
 ```
 
 - **安装pip** 
