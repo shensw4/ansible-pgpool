@@ -1,0 +1,8 @@
+{% for host in groups['pgsqlHA'] %}
+{{ host }}:{{ pgport }}:replication:repl:{{ db_repl_password }}
+{{ host }}:{{ pgport }}:postgres:postgres:{{ db_postgres_password }}
+{{ hostvars[host]['ansible_hostname'] }}:{{ pgport }}:replication:repl:{{ db_repl_password }}
+{{ hostvars[host]['ansible_hostname'] }}:{{ pgport }}:postgres:postgres:{{ db_postgres_password }}
+{{ hostvars[host]['ansible_fqdn'] }}:{{ pgport }}:replication:repl:{{ db_repl_password }}
+{{ hostvars[host]['ansible_fqdn'] }}:{{ pgport }}:postgres:postgres:{{ db_postgres_password }}
+{% endfor %}

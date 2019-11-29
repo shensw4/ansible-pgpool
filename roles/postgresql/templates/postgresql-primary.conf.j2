@@ -1,0 +1,17 @@
+listen_addresses = '*'
+port = {{ pgport }}
+max_wal_size = 1GB
+min_wal_size = 80MB
+archive_mode = on
+archive_command = 'cp "%p" "{{ pgArchiveDir }}/%f"'
+wal_level = replica
+max_wal_senders = 10
+wal_keep_segments = 10
+max_replication_slots = 10
+hot_standby = on
+wal_log_hints = on
+log_timezone = '{{ timezone }}'
+datestyle = 'iso, mdy'
+timezone = '{{ timezone }}'
+default_text_search_config = 'pg_catalog.english'
+

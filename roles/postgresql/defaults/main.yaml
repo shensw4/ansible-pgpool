@@ -1,0 +1,17 @@
+# postgresql user
+pgUser: postgres
+
+# postgresql offline rpm directory
+pgsql_rpm_relpath: postgresql-11
+
+# Install postgresql online, if the postgresql offline RPM does not exist
+pgsql_repo: https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+pgsql_yum:
+  - postgresql11 
+  - postgresql11-libs 
+  - postgresql11-devel 
+  - postgresql11-server
+
+# archive mode
+pgArchiveDir: "{{ pghome }}/archivedir"
+

@@ -1,0 +1,6 @@
+- hosts: 
+    - pgsqlPrimary
+    - pgsqlStandby
+  roles:
+    - { role: pgpool-ii, when: ansible_distribution == 'CentOS'}
+

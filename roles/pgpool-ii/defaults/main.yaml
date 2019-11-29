@@ -1,0 +1,7 @@
+# pgpool offline rpm directory
+pgpool_rpm_relpath: pgpool-ii
+
+# Install pgpool online, if the pgpool offline RPM does not exist
+pgpool_repo: http://www.pgpool.net/yum/rpms/4.1/redhat/rhel-7-x86_64/pgpool-II-release-4.1-1.noarch.rpm
+pgpool_yum: pgpool-II-pg11-*
+

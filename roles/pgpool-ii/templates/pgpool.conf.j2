@@ -1,0 +1,104 @@
+listen_addresses = '*'
+port = {{ pgpool_port }}
+delegate_IP = '{{ VIP.split('/')[0] }}'
+master_slave_mode = on
+master_slave_sub_mode = 'stream'
+replication_mode = off
+load_balance_mode = on
+
+enable_pool_hba = on
+pool_passwd = 'pool_passwd'
+
+sr_check_user = 'pgpool'
+sr_check_password = ''
+
+health_check_period = 5
+# Health check period
+# Disabled (0) by default
+health_check_timeout = 30
+# Health check timeout
+# 0 means no timeout
+health_check_user = 'pgpool'
+health_check_password = ''
+
+health_check_max_retries = 3
+
+# - Backend Connection Settings -
+backend_hostname0 = '{{ hostvars[groups['pgsqlPrimary'][0]]['ansible_hostname'] }}'
+# Host name or IP address to connect to for backend 0
+backend_port0 = {{ hostvars[groups['pgsqlPrimary'][0]]['pgport'] }}
+# Port number for backend 0
+backend_weight0 = 1
+# Weight for backend 0 (only in load balancing mode)
+backend_data_directory0 = '{{ pgdata }}'
+# Data directory for backend 0
+backend_flag0 = 'ALLOW_TO_FAILOVER'
+# Controls various backend behavior
+# ALLOW_TO_FAILOVER or DISALLOW_TO_FAILOVER
+backend_application_name0 = '{{ hostvars[groups['pgsqlPrimary'][0]]['ansible_hostname'] }}'
+
+{% for host in groups['pgsqlStandby'] %}
+backend_hostname{{ loop.index }} = '{{ hostvars[host]['ansible_hostname'] }}'
+backend_port{{ loop.index }} = {{ hostvars[host]['pgport'] }}
+backend_weight{{ loop.index }} = 1
+backend_data_directory{{ loop.index }} = '{{ pgdata }}'
+backend_flag{{ loop.index }} = 'ALLOW_TO_FAILOVER'
+backend_application_name{{ loop.index }} = '{{ hostvars[host]['ansible_hostname'] }}'
+{% endfor %}
+
+failover_command = '/etc/pgpool-II/failover.sh %d %h %p %D %m %H %M %P %r %R %N %S'
+{% if groups['pgsqlHA'] | length > 2 %}
+follow_master_command = '/etc/pgpool-II/follow_master.sh %d %h %p %D %m %M %H %P %r %R'
+{% endif %}
+recovery_user = 'postgres'
+# Online recovery user
+recovery_password = ''
+# Online recovery password
+recovery_1st_stage_command = 'recovery_1st_stage'
+
+if_cmd_path = '/sbin'
+arping_path = '/usr/sbin'
+if_up_cmd = '/usr/bin/sudo /sbin/ip addr add $_IP_$/{{ VIP.split('/')[1] }} dev {{ interface }} label {{ interface }}:0'
+if_down_cmd = '/usr/bin/sudo /sbin/ip addr del $_IP_$/{{ VIP.split('/')[1] }} dev {{ interface }}'
+arping_cmd = '/usr/bin/sudo /usr/sbin/arping -U $_IP_$ -w 1 -I {{ interface }}'
+
+use_watchdog = on
+wd_hostname = '{{ ansible_hostname }}'
+wd_port = {{ watchdog_port }}
+
+{% for host in groups['pgsqlHA'] if not host == inventory_hostname %}
+other_pgpool_hostname{{ loop.index -1 }} = '{{ hostvars[host]['ansible_hostname'] }}'
+# Host name or IP address to connect to for other pgpool 0
+# (change requires restart)
+other_pgpool_port{{ loop.index -1 }} = {{ hostvars[host]['pgpool_port'] }}
+# Port number for other pgpool 0
+# (change requires restart)
+other_wd_port{{ loop.index -1 }} = {{ hostvars[host]['watchdog_port'] }}
+# Port number for other watchdog 0
+# (change requires restart)
+
+heartbeat_destination{{ loop.index -1 }} = '{{ hostvars[host]['ansible_hostname'] }}'
+# Host name or IP address of destination 0
+# for sending heartbeat signal.
+# (change requires restart)
+heartbeat_destination_port{{ loop.index -1 }} = {{ hostvars[host]['wd_heartbeat_port'] }}
+# Port number of destination 0 for sending
+# heartbeat signal. Usually this is the
+# same as wd_heartbeat_port.
+# (change requires restart)
+heartbeat_device{{ loop.index -1 }} = '{{ interface }}'
+# Name of NIC device (such like 'eth0')
+# used for sending/receiving heartbeat
+# signal to/from destination 0.
+# This works only when this is not empty
+# and pgpool has root privilege.
+# (change requires restart)
+{% endfor %}
+
+log_destination = 'syslog'
+# Where to log
+# Valid values are combinations of stderr,
+# and syslog. Default to stderr.
+
+syslog_facility = 'LOCAL1'
+# Syslog local facility. Default to LOCAL0

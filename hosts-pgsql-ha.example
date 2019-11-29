@@ -1,0 +1,40 @@
+[localhost]
+127.0.0.1
+
+# PostgreSQL Primary 
+[pgsqlPrimary]
+172.16.0.32 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694
+
+# PostgreSQL Standbys
+[pgsqlStandby]
+172.16.0.33 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694
+172.16.0.34 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694
+
+# pgsql high availability groups
+[pgsqlHA:children]
+pgsqlPrimary
+pgsqlStandby
+
+# pgsql high availability vars
+[pgsqlHA:vars]
+CIDR="172.16.0.0/16"
+VIP="172.16.0.31/16"
+# VIP network interface
+interface="eth0"
+db_postgres_password="changeit"
+db_pgpool_password="changeit"
+db_repl_password="changeit"
+pgpool_pcp_password="changeit"
+pool_decryption_key="some string"
+timezone="Asia/Shanghai"
+
+[all:vars]
+# deploy directory
+base_dir="/root/ansible"
+# offline package directory
+down_dir="{{ base_dir }}/down"
+# pgsql home
+pghome="/var/lib/pgsql"
+# PGDATA
+pgdata="{{ pghome }}/11/data"
+

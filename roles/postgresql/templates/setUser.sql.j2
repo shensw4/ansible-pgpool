@@ -1,0 +1,7 @@
+SET password_encryption = 'scram-sha-256';
+CREATE ROLE pgpool WITH LOGIN PASSWORD '{{ db_pgpool_password }}';
+CREATE ROLE repl WITH REPLICATION LOGIN PASSWORD '{{ db_repl_password }}';
+ALTER USER pgpool WITH ENCRYPTED PASSWORD '{{ db_pgpool_password }}';
+ALTER USER repl WITH ENCRYPTED PASSWORD '{{ db_repl_password }}';
+ALTER USER postgres WITH ENCRYPTED PASSWORD '{{ db_postgres_password }}';
+GRANT pg_monitor TO pgpool;

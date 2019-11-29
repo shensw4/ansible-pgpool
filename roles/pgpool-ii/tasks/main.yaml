@@ -1,0 +1,207 @@
+- name: Copy offline pgpool rpms 
+  copy:
+    src: "{{ down_dir }}/{{ pgpool_rpm_relpath }}/"
+    dest: "/tmp/{{ pgpool_rpm_relpath }}"
+  register: pgpool_copied
+  ignore_errors: true
+  tags:
+    - pgpool_install
+    - pgpool_offline
+
+- block:
+  - name: Install pgpool repo online
+    yum:
+      name: "{{ pgpool_repo }}"
+      state: present
+  
+  - name: Install pgpool online
+    yum:
+      name: "{{ pgpool_yum }}"
+      state: present
+  when: pgpool_copied is undefined or pgpool_copied is failed
+  tags:
+    - pgpool_online
+    - pgpool_install
+
+
+- block:
+  - name: Create pgpool log directory
+    file:
+      path: /var/log/pgpool-II
+      state: directory
+      owner: postgres
+      group: postgres
+      mode: 0700
+
+  # - name: Create pgpool log file
+  #   file:
+  #     path: /var/log/pgpool-II/pgpool.log
+  #     state: touch
+
+  - name: Add rsyslog for pgpool 
+    lineinfile:
+      path: /etc/rsyslog.d/pgpool.conf
+      line: LOCAL1.*  /var/log/pgpool-II/pgpool.log
+      create: true
+      state: present
+    notify: restart rsyslog
+
+  - name: Add logrotate for pgpool
+    lineinfile:
+      path: /etc/logrotate.d/syslog
+      insertbefore: BOF
+      line: /var/log/pgpool-II/pgpool.log
+      state: present
+  tags: pgpoolLog
+
+
+- block:
+  - name: Find pgpool rpms
+    find:
+      paths: "{{ pgpool_copied.dest }}"
+      patterns: "*.rpm"
+    register: pgpool_rpms
+  
+  - name: Get a list of pgpool offline rpms
+    set_fact: 
+      pgpool_rpm_list: "{{ pgpool_rpms.files | map(attribute='path') | list }}"
+    when: pgpool_rpms is defined
+  
+  - name: Install pgpool from offline rpms
+    yum:
+      name: "{{ pgpool_rpm_list }}"
+      state: present
+    when: pgpool_rpm_list is defined
+  when: 
+    - pgpool_copied is succeeded
+  tags:
+    - pgpool_install
+    - pgpool_offline
+  
+- name: install pgpool_recovery on pgsqlPrimary
+  shell: 'psql template1 -c "CREATE EXTENSION pgpool_recovery";true'
+  become: true
+  become_user: postgres
+  when: inventory_hostname == groups['pgsqlPrimary'][0]
+  tags: recovery
+
+- block:
+  - name: Copy failover.sh
+    copy:
+      src: failover.sh
+      dest: /etc/pgpool-II/failover.sh
+      owner: postgres
+      group: postgres
+      mode: 0755
+
+  - name: Copy follow_master.sh
+    copy:
+      src: follow_master.sh
+      dest: /etc/pgpool-II/follow_master.sh
+      owner: postgres
+      group: postgres
+      mode: 0755
+  tags: scripts
+
+- block:
+  - name: Copy recovery_1st_stage
+    copy:
+      src: recovery_1st_stage
+      dest: '{{ pgdata }}/recovery_1st_stage'
+      owner: postgres
+      group: postgres
+      mode: 0755
+
+  - name: pgpool_remote_start
+    copy:
+      src: pgpool_remote_start
+      dest: '{{ pgdata }}/pgpool_remote_start'
+      owner: postgres
+      group: postgres
+      mode: 0755
+  when: inventory_hostname == groups['pgsqlPrimary'][0]
+  tags: scripts
+
+- block:
+  - name: Copy template pgpool.conf
+    template:
+      src: pgpool.conf.j2
+      dest: /etc/pgpool-II/pgpool.conf
+      owner: postgres
+      group: postgres
+      mode: 0600
+
+  - name: Create pgpool decryption key
+    shell: echo '{{ pool_decryption_key }}' > ~/.pgpoolkey
+    become: true
+    become_user: postgres
+
+  - name: Create pgpool decryption key
+    file:
+      path: ~/.pgpoolkey
+      owner: postgres
+      group: postgres
+      mode: 0600
+      state: touch
+    become: true
+    become_user: postgres
+
+  - name: Generate pool_passwd for pgpool
+    shell: pg_enc -m -k ~/.pgpoolkey -u pgpool "{{ db_pgpool_password }}"
+    become: true
+    become_user: postgres
+
+  - name: Generate pool_passwd for postgres
+    shell: pg_enc -m -k ~/.pgpoolkey -u postgres "{{ db_postgres_password }}"
+    become: true
+    become_user: postgres
+
+  - name: Copy template pool_hba.conf.j2
+    template:
+      src: pool_hba.conf.j2
+      dest: /etc/pgpool-II/pool_hba.conf
+      owner: postgres
+      group: postgres
+      mode: 0600
+
+  - name: Ignore pgpool_status
+    lineinfile:
+      path: /etc/sysconfig/pgpool
+      regexp: '^OPTS='
+      line: 'OPTS=" -D -n"'
+      state: present
+
+  - name: Generate pcp md5 password
+    shell: "pg_md5 {{ pgpool_pcp_password }}"
+    register: pcp_md5
+
+  - name: Write pcp md5 password in /etc/pgpool-II/pcp.conf
+    lineinfile:
+      regexp: 'pgpool:{{ pcp_md5.stdout }}'
+      path: /etc/pgpool-II/pcp.conf
+      line: 'pgpool:{{ pcp_md5.stdout }}'
+      owner: postgres
+      group: postgres
+      mode: 0600
+      state: present
+
+  - name: Write pcp md5 password for postgres
+    lineinfile:
+      path: ~/.pcppass
+      regexp: '^localhost:{{ pcp_port  }}:pgpool'
+      line: 'localhost:{{ pcp_port }}:pgpool:{{ pgpool_pcp_password }}'
+      owner: postgres
+      group: postgres
+      mode: 0600
+      create: true
+      state: present
+    become: true
+    become_user: postgres
+
+  - name: restart pgpool
+    systemd:
+      name: pgpool
+      state: restarted
+      enabled: true
+  tags: pgpoolConf
+

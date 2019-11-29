@@ -1,0 +1,16 @@
+- hosts: localhost
+  tasks:
+  - name: Generate SSH key for user postgres for the pgpool
+    user:
+      name: root
+      generate_ssh_key: true
+      ssh_key_bits: 2048
+      ssh_key_file: "{{ base_dir }}/tmp/id_rsa_pgpool"
+    tags: sshkey
+
+- hosts: 
+    - pgsqlPrimary
+    - pgsqlStandby
+  roles:
+    - { role: postgresql, when: ansible_distribution == 'CentOS'}
+
