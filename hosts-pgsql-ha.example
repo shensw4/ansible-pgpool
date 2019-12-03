@@ -3,12 +3,12 @@
 
 # PostgreSQL Primary 
 [pgsqlPrimary]
-172.16.0.32 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694
+172.16.0.32 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=true
 
 # PostgreSQL Standbys
 [pgsqlStandby]
-172.16.0.33 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694
-172.16.0.34 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694
+172.16.0.33 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=true
+172.16.0.34 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=true
 
 # pgsql high availability groups
 [pgsqlHA:children]
