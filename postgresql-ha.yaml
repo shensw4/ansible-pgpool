@@ -8,10 +8,30 @@
       ssh_key_file: "{{ base_dir }}/tmp/id_rsa_pgpool"
     tags: sshkey
 
-- hosts: 
-    - pgsqlPrimary
-    - pgsqlStandby
+- hosts: all
   roles:
-    - { role: postgresql, when: ansible_distribution == 'CentOS'}
-    - { role: pgpool-ii, when: ansible_distribution == 'CentOS'}
+    - { 
+        role: postgresql,
+        when: ansible_distribution == 'CentOS' and inventory_hostname in groups.pgsqlHA
+      }
+    - { 
+        role: pgpool-ii,
+        when: ansible_distribution == 'CentOS' and inventory_hostname in groups.pgsqlHA
+      }
+  tasks:
+  - name: Copy template .pgpass
+    include_tasks: roles/postgresql/tasks/pgpass.yaml
+    when: ansible_distribution == 'CentOS' and inventory_hostname in groups['pgsqlHA']
+  - name: start pgpool
+    systemd:
+      name: pgpool
+      state: started
+      enabled: true
+    when: ansible_distribution == 'CentOS' and inventory_hostname in groups['pgsqlHA']
+  - name: Replace pgsqlStandby['isnew'] with false in {{ inventory_file }} 
+    replace:
+      path: "{{ inventory_file }}"
+      regexp: 'isnew=true'
+      replace: 'isnew=false'
+    when: ansible_distribution == 'CentOS' and inventory_hostname in groups['localhost']
 

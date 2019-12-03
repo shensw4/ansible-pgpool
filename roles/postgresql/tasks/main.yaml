@@ -168,12 +168,7 @@
     become_user: postgres
 
   - name: Copy template pg_hba.conf.j2
-    template:
-      src: pg_hba.conf.j2
-      dest: "{{ pgdata }}/pg_hba.conf"
-      owner: postgres
-      group: postgres
-      mode: 0600
+    include_tasks: pg_hba.yaml
 
   - name: restart pgsql
     systemd:
@@ -181,14 +176,4 @@
       state: restarted
   tags: primaryConf
   when: inventory_hostname in groups['pgsqlPrimary']
-
-
-- name: Copy template .pgpass
-  template:
-    src: pgpass.j2
-    dest: "{{ pghome }}/.pgpass"
-    owner: postgres
-    group: postgres
-    mode: 0600
-  tags: pgpass
 

@@ -93,13 +93,13 @@ host    replication     all             127.0.0.1/32            trust
 host    replication     all             ::1/128                 trust
 
 {% for host in groups['pgsqlHA'] %}
-host    replication     repl            {{ host }}/32         scram-sha-256
-host    all             postgres        {{ host }}/32         scram-sha-256
-host    all             pgpool          {{ host }}/32         scram-sha-256
-host    replication     repl            {{ ansible_hostname }}        scram-sha-256
-host    all             postgres        {{ ansible_hostname }}        scram-sha-256
-host    all             pgpool          {{ ansible_hostname }}        scram-sha-256
-host    replication     repl            {{ ansible_fqdn }}      scram-sha-256
-host    all             postgres        {{ ansible_fqdn }}      scram-sha-256
-host    all             pgpool          {{ ansible_fqdn }}      scram-sha-256
+host    replication     repl            {{ host }}/32           scram-sha-256
+host    all             postgres        {{ host }}/32           scram-sha-256
+host    all             pgpool          {{ host }}/32           scram-sha-256
+host    replication     repl            {{ hostvars[host]['ansible_hostname'] }}            scram-sha-256
+host    all             postgres        {{ hostvars[host]['ansible_hostname'] }}            scram-sha-256
+host    all             pgpool          {{ hostvars[host]['ansible_hostname'] }}            scram-sha-256
+host    replication     repl            {{ hostvars[host]['ansible_fqdn'] }}            scram-sha-256
+host    all             postgres        {{ hostvars[host]['ansible_fqdn'] }}            scram-sha-256
+host    all             pgpool          {{ hostvars[host]['ansible_fqdn'] }}            scram-sha-256
 {% endfor %}

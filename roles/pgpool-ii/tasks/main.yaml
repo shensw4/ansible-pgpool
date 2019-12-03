@@ -33,11 +33,6 @@
       group: postgres
       mode: 0700
 
-  # - name: Create pgpool log file
-  #   file:
-  #     path: /var/log/pgpool-II/pgpool.log
-  #     state: touch
-
   - name: Add rsyslog for pgpool 
     lineinfile:
       path: /etc/rsyslog.d/pgpool.conf
@@ -198,10 +193,5 @@
     become: true
     become_user: postgres
 
-  - name: restart pgpool
-    systemd:
-      name: pgpool
-      state: restarted
-      enabled: true
   tags: pgpoolConf
 

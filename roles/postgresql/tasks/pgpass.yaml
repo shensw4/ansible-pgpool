@@ -1,0 +1,9 @@
+- name: Copy template .pgpass
+  template:
+    src: ../templates/pgpass.j2
+    dest: "{{ pghome }}/.pgpass"
+    owner: postgres
+    group: postgres
+    mode: 0600
+  tags: pgpass
+

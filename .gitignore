@@ -1,4 +1,5 @@
 *.rpm
+*.swap
 tmp/
 down/
 

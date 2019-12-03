@@ -1,0 +1,43 @@
+- hosts: pgsqlHA
+  roles:
+    - { role: postgresql, when: ansible_distribution == 'CentOS' and isnew|bool }
+    - { role: pgpool-ii, when: ansible_distribution == 'CentOS' }
+
+  tasks:
+  - name: Copy template .pgpass
+    include_tasks: roles/postgresql/tasks/pgpass.yaml
+    when: ansible_distribution == 'CentOS' and inventory_hostname in groups['pgsqlHA']
+
+  - block:
+    - name: Copy template pg_hba.conf.j2
+      include_tasks: roles/postgresql/tasks/pg_hba.yaml
+    - name: reload pgsql
+      shell: "/usr/pgsql-11/bin/pg_ctl reload -D {{ pgdata }}"
+      become: true
+      become_user: postgres
+    when: ansible_distribution == 'CentOS' and (inventory_hostname in groups['pgsqlPrimary'] or (inventory_hostname in groups['pgsqlStandby'] and not isnew|bool))
+
+
+- hosts: pgsqlHA
+  tasks:
+  - name: reload pgpool
+    systemd:
+      name: pgpool
+      state: reloaded
+    when: ansible_distribution == 'CentOS' and (inventory_hostname in groups['pgsqlPrimary'] or (inventory_hostname in groups['pgsqlStandby'] and not isnew|bool))
+  - name: start pgpool
+    systemd:
+      name: pgpool
+      state: started
+      enabled: true
+    when: ansible_distribution == 'CentOS' and isnew|bool
+
+
+- hosts: localhost
+  tasks:
+  - name: Replace pgsqlStandby['isnew'] with false in {{ inventory_file }} 
+    replace:
+      path: "{{ inventory_file }}"
+      regexp: 'isnew=true'
+      replace: 'isnew=false'
+    when: ansible_distribution == 'CentOS'
