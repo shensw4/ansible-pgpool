@@ -15,7 +15,7 @@
       shell: "/usr/pgsql-11/bin/pg_ctl reload -D {{ pgdata }}"
       become: true
       become_user: postgres
-    when: ansible_distribution == 'CentOS' and (inventory_hostname in groups['pgsqlPrimary'] or (inventory_hostname in groups['pgsqlStandby'] and not isnew|bool))
+    when: ansible_distribution == 'CentOS' and not isnew|bool
 
 
 - hosts: pgsqlHA
@@ -24,7 +24,7 @@
     systemd:
       name: pgpool
       state: reloaded
-    when: ansible_distribution == 'CentOS' and (inventory_hostname in groups['pgsqlPrimary'] or (inventory_hostname in groups['pgsqlStandby'] and not isnew|bool))
+    when: ansible_distribution == 'CentOS' and not isnew|bool
   - name: start pgpool
     systemd:
       name: pgpool
