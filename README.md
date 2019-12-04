@@ -83,3 +83,27 @@ su - postgres
 pcp_recovery_node -h 'yourVIP' -p 9898 -U pgpool -n 1
 ``` 
 
+- **热添加节点**
+```bash
+# 查看ansible inventory文件
+cat hosts-pgsql-ha
+#...... # 此处省略
+[pgsqlStandby]
+172.16.0.33 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=false
+172.16.0.34 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=false
+#..... # 此处省略
+
+# 编辑inventory文件添加新节点, 新节点依赖ansible inventory文件的isnew字段，需设置'isnew'=true
+vim hosts-pgsql-ha
+
+cat hosts-pgsql-ha
+#...... # 此处省略
+[pgsqlStandby]
+172.16.0.33 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=false
+172.16.0.34 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=false
+172.16.0.35 pgport=5432 pgpool_port=5433 pcp_port=9898 watchdog_port=9000 wd_heartbeat_port=9694 isnew=true
+#..... # 此处省略
+
+# 执行
+ansible-playbook pgsqlStandby.yaml
+```
